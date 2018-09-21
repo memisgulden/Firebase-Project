@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Train Schedule</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- BootStrap Link-->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"
+        crossorigin="anonymous">
+    <!-- Firebase Reference -->
+    <script src="https://www.gstatic.com/firebasejs/4.12.0/firebase.js"></script>
+    <!-- jQuery -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+
+    <!-- Moment.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment.min.js"></script>    
+
+
+</head>
+
+<body>
+
+    <div class="container-fluid">
+
+        <br>
+
+        <!-- Jumbotron Title -->
+        <div class="jumbotron">
+            <h1 class="text-center">Train Time Schedule</h1>
+            <h2 class="text-center">Anytime is Train Time</h2>
+        </div>
+
+        <!-- Form Area-->
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="card">
+                    <div class="card-body" id="input">
+                        <form>
+                            <div class="form-group">
+                                <label for="exampleInputEmail1">Train Name:</label>
+                                <input type="name" class="form-control" id="newTrain" placeholder="">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="exampleInputEmail1">Destination:</label>
+                                <input type="name" class="form-control" id="newDest" placeholder="">
+                            </div>
+                            <div class="form-group">
+                                <label for="exampleInputPassword1">First Train Time: (HH:mm - military time)</label>
+                                <input type="time" class="form-control" id="newTime" placeholder="">
+                            </div>
+                            <div class="form-group">
+                                <label for="exampleInputPassword1">Frequency:</label>
+                                <input type="number" class="form-control" id="newFrequency" placeholder="">
+                            </div>
+
+                            <button type="submit" class="btn btn-primary" id="submit">Submit</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Display Area-->
+        <div class="row">
+            <div class="col-lg-12 pt-4">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="form-group row">
+                            <label>Current Train Schedule</label>
+                        </div>
+                        <table id="table" class="table">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th scope="col" class="column">Train Name</th>
+                                    <th scope="col" class="column">Destination</th>
+                                    <th scope="col" class="column">Frequency (min)</th>
+                                    <th scope="col" class="column">Next Arrival</th>
+                                    <th scope="col" class="column">Minutes Away</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                <tr>
+                                    <td id="nameSpace">Trenton Express</td>
+                                    <td id="destSpace">Trenton</td>
+                                    <td id="freqSpace">25</td>
+                                    <td id="timeSpace">5:35 PM</td>
+                                    <td id="rateSpace">10</td>
+
+                                </tr>
+                            </tbody>
+
+                        </table>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Javascript and JQuery -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script>
+        console.log("I work!");
+
+        var config = {
+            apiKey: "AIzaSyD_po2WESW0iT7WEXBsuu6JI8TbfsYoxGA",
+            authDomain: "fir-project-b0ecf.firebaseapp.com",
+            databaseURL: "https://fir-project-b0ecf.firebaseio.com/",
+            projectId: "fir-project-b0ecf",
+            storageBucket: "",
+            messagingSenderId: "109697396969",
+        };
+
+        firebase.initializeApp(config);
+        var dataRef = firebase.database();
+
+
+        $("#submit").on("click", function (event) {
+            event.preventDefault();
+
+            // var name = "";
+            // var dest = "";
+            // var time = 0;
+            // var freq = 0;
+
+            var name = $("#newTrain").val().trim();
+            var dest = $("#newDest").val().trim();
+            var time = $("#newTime").val().trim();
+            var freq = $("#newFrequency").val().trim();
+
+            var newTrain = {
+
+                name: name,
+                dest: dest,
+                time: time,
+                freq: freq,
+            };
+
+            dataRef.ref().push(newTrain);
+
+            //clear  //
+            $("form").trigger("reset");
+        });    
+
+            dataRef.ref().on("child_added", function (childSnapshot) {
+
+                var trainName = childSnapshot.val().name;
+                var trainDest = childSnapshot.val().dest;
+                var trainFreq = childSnapshot.val().freq;
+                var trainTime = childSnapshot.val().time;
+
+                var firstTimeConverted = moment(trainTime, "HH:mm").subtract(1, "years");
+
+                var currentTime = moment();
+
+                var diffTime = moment().diff(moment(firstTimeConverted), "minutes");
+
+                var tRemainder = diffTime % trainFreq;
+
+                var tMinutesTillTrain = trainFreq - trainTime;
+
+                var nextTrain = moment().add(tMinutesTillTrain, "minutes");
+
+                var newRow = $("<tr>").append(
+                    $("<td>").text(trainName),
+                    $("<td>").text(trainDest),
+                    $("<td>").text(trainFreq),
+                    $("<td>").text(trainTime),
+                )
+
+                $("#table > tbody").prepend(newRow);        
+
+            }, function (errorObject) {
+                console.log("Errors handled: " + errorObject.code);
+            });
+
+        
+
+    </script>
+</body>
+
+</html>
